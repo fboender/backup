@@ -1,0 +1,21 @@
+Backup: ChangeLog
+------------------------------------------------------------------------------
+
+[19 Dec 2001] <%%EMAIL>
+    * Use of the I parameter for tar was changed to J (bzip2 option)
+    * Changed email address in documentation
+    * Release version 0.4
+
+[27 Feb 2001] <%%EMAIL>
+    * Release version 0.3
+    * Added support for setting permissions after backup
+    
+[04 Dec 2000] <%%EMAIL>
+
+    * Release version 0.2 (gaat hard he)
+    * Added failure if config file not found.
+
+[08 Sep 2000] <%%EMAIL>
+
+    * Release version 0.1
+    * Updated documentation

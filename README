@@ -1,0 +1,154 @@
+backup v0.4
+
+Copyright (c) 2000, Ferry Boender <%%EMAIL>
+Licensed under the General Public License (GPL), see COPYING file 
+provided with this program.
+
+
+Contents of this document
+-------------------------------------------------------------------------------
+
+	1.	What is backup?
+	2.	Installation.
+		2.1	backup.conf
+		2.2	backup.list
+		2.3	Automation.
+	3.	Copyright stuff.
+	4.	Contact information.
+
+
+1.	What is backup?
+-------------------------------------------------------------------------------
+
+	Backup is a shell script which tries to simplify/speed up the process 
+	of making backups. The paths that need to be backed up are read from a
+	file  containing the full pathnames to the paths and/or files that 
+	need to be  backed up. A tar.bz2 archive is created for each 
+	individual directory/file.
+  
+	Configuration is provided through a local or global configuration 
+	file. 
+    
+
+2.	Installation.
+-------------------------------------------------------------------------------
+
+	Installation is currently (v0.3) not automated, so you will have to 
+	install it by hand. Here are some quick steps for installation:
+  
+	* Edit backup.conf
+	* Edit backup.list
+	* Copy backup.conf to /etc/ or a local directory from which you will 
+	  run backup.
+	* Copy backup.list to the directory defined in backup.list (see 
+	  BACKUP.CONF section)
+	* Copy the backup executable to i.e /usr/local/sbin
+	* Change permissions on all files if needed.
+  
+	  Here's a more in-depth explanation of the configuration files:
+
+	2.1.	Backup.conf
+	-----------------------------------------------------------------------
+	
+	In the backup.conf file contains the configuration for backup. When 
+	backup is run, it first checks the current directory for the file. If 
+	it is found it will be parsed. If it isn't found, backup will look for 
+	the file in the /etc/ directory, and parse it. If still no
+	configuration file was found, then the script will abort.
+	
+
+	Configuration values are in the form of: CONFIGOPTION=value
+	The configuration options (CONFIGOPTION) are case sensitive!
+	
+	BACKUP_LIST     Full path and filename to the file which contains the 
+			list of paths/files that need to be backed up.
+
+	STORAGE_PATH    Location where the backups should be stored.
+	NICENESS        Priority with which the backup process should run. 
+	                (-20 = high, 19 = low)
+	MODE		Which permissions to set on the newly created backup
+			archives. It should be specified as octal numbers,
+			like with chmod. Ex: 600 (only readable for owner)
+			
+	
+	2.2.	Backup.list
+	-----------------------------------------------------------------------
+	
+	The backup.list file contains a number of paths which should be backed
+	up. A new tar.bzip2 archive will be created for each line in the file.
+	You may specify either a path or a filename.
+	
+	Some examples:
+	
+	To recursively backup the whole /etc/ dir to a archive named 
+	etc.tar.bzip2, use the following line:
+	
+	/etc/
+	
+	To backup the file /home/john/myimportdata.txt to an archive named
+	myimportantdata.txt.tar.bzip2 use the following line:
+	
+	/home/john/myimportantdata.txt
+	
+	
+	2.3	Automation.
+	-----------------------------------------------------------------------
+	
+	If you want backup to run automatically, say, every week you can create
+	the following entry in your /etc/crontab:
+	
+	00 3    * * 1   root    /usr/local/sbin/backup
+	
+	This will generate some output each time it's finished backing up. 
+	Depending on your configuration, this output will automatically be
+	mailed to you. If you do not wish backup to generate this output, just
+	add a redirector to the crontab like this:
+	
+	00 3    * * 1   root    /usr/local/sbin/backup > /dev/null
+	
+	Or redirect the output to some kind of backup log. Errors during the
+	backup will still be mailed to you (depending on your configuration)
+
+	If you cannot run backup as root, you can add the following line to 
+	your personal crontab:
+	
+	00 3    * * 1   /home/john/bin/backup > /dev/null
+	
+
+3.	Copyright stuff.
+-------------------------------------------------------------------------------
+
+	backup is Copyright by Ferry Boender,
+	licensed under the General Public License (GPL)
+
+	Copyright (C), 2000 by Ferry Boender <%%EMAIL>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+        
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+	GNU General Public License for more details.
+        
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to the Free Software
+	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+                
+	For more information, see the COPYING file supplied with this
+	program.
+
+
+4.	Contact information.
+-------------------------------------------------------------------------------
+
+	Author:
+	
+		Ferry Boender
+		Email: %%EMAIL
+		Homepage: %%MHOMEPAGE
+		
+	Please report any bugs, request and general comments to the email
+	address stated above.

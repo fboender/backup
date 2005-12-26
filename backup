@@ -1,0 +1,118 @@
+#!/bin/sh
+#
+#  backup v0.4
+#
+#  Backup allows the automation of a backup process through the use of a
+#  file which contains the paths to backup. You can use this program from 
+#  the commandline, or by invoking it, let say, monthly through a cronjob.
+#  To run this script through a cronjob, and be mailed automatically when
+#  a backup is made, you can add the following line to your /etc/crontab:
+#
+#  00 2    1 * *   root    /usr/local/sbin/backup
+#
+#  to run a backup every first of the month at 02:00 and mail the result 
+#  to the root user (if your crontab is set up correctly anyways)
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+
+#
+# Set some global variables.
+#
+	VERSION=0.4
+	TEMPFILE=`tempfile`
+	ERROR=0
+
+#
+# Show program information
+#
+	echo
+	echo "[ Backup v$VERSION, by Ferry Boender (C)2000, under General Public License (GPL)]"
+	echo
+
+#
+# 'read' configuration file
+#
+	echo "[-] Reading config file";
+	if [ -r ./backup.conf ]; then source ./backup.conf; echo "	[-] Local configuration found";
+	elif [ -r /etc/backup.conf ]; then source /etc/backup.conf; echo "	[-] Global configuration found";
+	else echo "	[-] No configuration file found!"; echo -e '	[!] Aborting...\n'; exit;
+	fi
+
+	echo "	[-] Using backup list $BACKUP_LIST";
+	echo "	[-] Storing backups in $STORAGE_PATH";
+	echo "	[-] Backing up with niceness $NICENESS";
+
+#
+# Check some mandatory stuff which backup needs to run
+#
+	echo "[-] Checking state"
+	
+	if [ ! -e $BACKUP_LIST ]; then echo "	[!] $BACKUP_LIST does not exist"; exit; fi
+	if [ ! -r $BACKUP_LIST ]; then echo "	[!] $BACKUP_LIST: Access denied"; exit; fi
+	if [ ! -e $STORAGE_PATH ]; then 
+		echo "	[-] Backup storage dir $STORAGE_PATH does not exist."; 
+		echo "	[-] Attempting to create storage dir...";
+
+		mkdir $STORAGE_PATH 2> /dev/null;
+		if [ ! -e $STORAGE_PATH ]; then echo "	[!] Could not create storage dir."; exit; fi
+		echo "	[-] Backup dir $STORAGE_PATH created successfull.";
+		echo "	[-] Setting permissions on backup directory to 700."
+		chmod 700 $STORAGE_PATH
+	fi
+	if [ ! -w $STORAGE_PATH ]; then echo "	[!] Backup Storage dir $STORAGE_PATH: Access denied"; exit; fi
+
+#
+# Start the backup procedure
+#
+	echo "[-] Starting backup process";
+	for i in `cat $BACKUP_LIST | grep -v "#" | grep -vx ""`
+	do
+		# remove pending and trailing backslashes
+#		#i=`echo $i | sed -e 's/^\///'`
+#		#i=`echo $i | sed -e 's/\/$//'`
+		i=`echo $i | sed -e 's/^\///;s/\/$//'`
+		#if echo $i | grep -x -q "/.*"; then i=$(echo -n $i | tail -c $(expr $(echo $i | wc -c) - 2);); fi
+		#if echo $i | grep -x -q ".*/"; then	i=$(echo -n $i | head -c $(expr $(echo $i | wc -c) - 2);); fi
+
+		echo "	[.] /$i -> $STORAGE_PATH/`echo $i | tr \/ \.`.tar.bz2"
+		nice -n $NICENESS tar -pPcjf $STORAGE_PATH/`echo $i | tr \/ \.`.tar.bz2 /$i 2> $TEMPFILE
+		if [ -s $TEMPFILE ]; then echo "	[!] Errors occured while creating backup."; ERROR=1; fi
+	done
+
+#
+# Set the rights
+#
+
+	echo "[-] Setting permissions to $MODE";
+	chmod $MODE $STORAGE_PATH/*;
+	
+#
+# Check for errors
+#
+	if [ $ERROR = 1 ]
+	then 
+		echo "[!] Errors occured during the backup process."
+		echo "    Please check $TEMPFILE to see what went wrong."
+	else
+		echo "[-] Cleaning up."
+		rm $TEMPFILE
+	fi
+
+#
+# Done...
+#
+	echo "[-] Done..."
+	exit $ERROR

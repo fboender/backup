@@ -1,0 +1,20 @@
+#
+#  Backup list for backup v0.4
+#
+#  This file contains a list of files/directories which will be backed up by
+#  backup each time it is run.
+#
+#  Some examples:
+#  /usr/local/bin/
+#  /usr/local/sbin/
+#  /etc/
+#  /home/boender/mbox
+
+/etc/
+/usr/local/bin/
+/usr/local/sbin/
+/home/todsah/
+/home/tribbel/
+/home/wasneeplus/
+home/root/
+var/www/
