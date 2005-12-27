@@ -1,6 +1,6 @@
-backup v0.4
+backup v0.5
 
-Copyright (c) 2000, Ferry Boender <%%EMAIL>
+Copyright (c) 2000, Ferry Boender <fboender at electricmonk .nl>
 Licensed under the General Public License (GPL), see COPYING file 
 provided with this program.
 
@@ -8,29 +8,28 @@ provided with this program.
 Contents of this document
 -------------------------------------------------------------------------------
 
-	1.	What is backup?
-	2.	Installation.
-		2.1	backup.conf
-		2.2	backup.list
-		2.3	Automation.
-	3.	Copyright stuff.
-	4.	Contact information.
+	1. What is backup?
+	2. Installation.
+	  2.1. backup.conf
+	  2.2. backup.list
+	  2.3. Automation.
+	  2.4. Pre and Post scripts
+	3. Copyright stuff.
+	4. Contact information.
 
 
-1.	What is backup?
+1. What is backup?
 -------------------------------------------------------------------------------
 
-	Backup is a shell script which tries to simplify/speed up the process 
-	of making backups. The paths that need to be backed up are read from a
-	file  containing the full pathnames to the paths and/or files that 
-	need to be  backed up. A tar.bz2 archive is created for each 
-	individual directory/file.
+	Backup is a shell script which tries to simplify/speed up the process of
+	making backups. The paths that need to be backed up are read from a file
+	containing the full pathnames to the paths and/or files that need to be
+	backed up. A tar.bz2 archive is created for each individual directory/file.
   
-	Configuration is provided through a local or global configuration 
-	file. 
+	Configuration is provided through a local or global configuration file. 
     
 
-2.	Installation.
+2. Installation.
 -------------------------------------------------------------------------------
 
 	Installation is currently (v0.3) not automated, so you will have to 
@@ -47,7 +46,7 @@ Contents of this document
   
 	  Here's a more in-depth explanation of the configuration files:
 
-	2.1.	Backup.conf
+	2.1. Backup.conf
 	-----------------------------------------------------------------------
 	
 	In the backup.conf file contains the configuration for backup. When 
@@ -61,17 +60,22 @@ Contents of this document
 	The configuration options (CONFIGOPTION) are case sensitive!
 	
 	BACKUP_LIST     Full path and filename to the file which contains the 
-			list of paths/files that need to be backed up.
+	                list of paths/files that need to be backed up.
 
 	STORAGE_PATH    Location where the backups should be stored.
 	NICENESS        Priority with which the backup process should run. 
 	                (-20 = high, 19 = low)
-	MODE		Which permissions to set on the newly created backup
-			archives. It should be specified as octal numbers,
-			like with chmod. Ex: 600 (only readable for owner)
-			
-	
-	2.2.	Backup.list
+	MODE            Which permissions to set on the newly created backup
+                    archives. It should be specified as octal numbers,
+                    like with chmod. Ex: 600 (only readable for owner)
+	PRE             Script to run prior to starting the backup process.
+	                The storage path may not exist at this point.
+	POST            Script to run after finishing the backup process.
+	PRE_EACH        Script to run prior to each individual path backup.
+	POST_EACH       Script to run after each individual path backup.
+
+
+	2.2. Backup.list
 	-----------------------------------------------------------------------
 	
 	The backup.list file contains a number of paths which should be backed
@@ -91,7 +95,7 @@ Contents of this document
 	/home/john/myimportantdata.txt
 	
 	
-	2.3	Automation.
+	2.3. Automation.
 	-----------------------------------------------------------------------
 	
 	If you want backup to run automatically, say, every week you can create
@@ -114,14 +118,40 @@ Contents of this document
 	
 	00 3    * * 1   /home/john/bin/backup > /dev/null
 	
+	2.4. Pre and Post scripts
+	-----------------------------------------------------------------------
 
-3.	Copyright stuff.
+	Four kind of scripts can be configured in the configuration file:
+	
+	PRE
+	    Ran before creating the target path and starting the backup. This
+	    script can be used to, for instance, mount a HD or rewind tapes.
+	    A numder of variables are exported to this script:
+	    
+	    DEST_DIR     : The destination directory which will contain the 
+	                   individual backups. /path/to/dest/
+	    
+	PRE_EACH
+	    Ran before each individual path backup. Exported variables:
+	
+	    SOURCE_DIR   : Source directory for the backup. /var/lib/mysql/
+	    DEST_DIR     : See above. /path/to/dest/
+	    DEST_FILE    : filename for the new backup. var.lib.mysq.tar.bz2
+	
+	POST_EACH
+	    Ran after each individual path backup. See PRE_EACH
+
+	POST
+	    Ran after the backup is done. See PRE
+	
+
+3. Copyright stuff.
 -------------------------------------------------------------------------------
 
 	backup is Copyright by Ferry Boender,
 	licensed under the General Public License (GPL)
 
-	Copyright (C), 2000 by Ferry Boender <%%EMAIL>
+	Copyright (C), 2000 by Ferry Boender <fboender at nihilist.nl>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -146,9 +176,9 @@ Contents of this document
 
 	Author:
 	
-		Ferry Boender
-		Email: %%EMAIL
-		Homepage: %%MHOMEPAGE
-		
+	  Ferry Boender
+	  Email: fboender at nihilist.nl
+	  http://www.nihilist.nl/
+	
 	Please report any bugs, request and general comments to the email
 	address stated above.

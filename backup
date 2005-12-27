@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  backup v0.4
+#  backup v0.5
 #
 #  Backup allows the automation of a backup process through the use of a
 #  file which contains the paths to backup. You can use this program from 
@@ -28,91 +28,179 @@
 #  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
-#
-# Set some global variables.
-#
-	VERSION=0.4
-	TEMPFILE=`tempfile`
-	ERROR=0
-
-#
-# Show program information
-#
+function usage() {
+	echo "Backup v$VERSION"
+	echo "Usage: $0 -v -c"
 	echo
-	echo "[ Backup v$VERSION, by Ferry Boender (C)2000, under General Public License (GPL)]"
-	echo
+	echo "-v, --verbose         Show lots of output"
+    echo "-c, --config CONFIG   Configuration file to use."
+}
 
-#
-# 'read' configuration file
-#
-	echo "[-] Reading config file";
-	if [ -r ./backup.conf ]; then source ./backup.conf; echo "	[-] Local configuration found";
-	elif [ -r /etc/backup.conf ]; then source /etc/backup.conf; echo "	[-] Global configuration found";
-	else echo "	[-] No configuration file found!"; echo -e '	[!] Aborting...\n'; exit;
+function msg() {
+	if [ "$FLAG_VERBOSE" ]; then
+		echo $*
+	fi
+}
+
+function handle_cmdline() {
+	TEMP=`getopt -o vc:h --long verbose,config:,help -n 'backup' -- "$@"`
+
+	if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+
+	eval set -- "$TEMP"
+
+	while true ; do
+		case "$1" in
+			-c|--config)   CONFIG=$2;      shift 2 ;;
+			-v|--verbose)  FLAG_VERBOSE=1; shift 1 ;;
+			-h|--help)     FLAG_HELP=1;    shift 1 ;;
+			--)                            shift 1; break ;;
+			*)             echo "Internal error!" ; exit 1 ;;
+		esac
+	done
+
+	if [ "$FLAG_HELP" ]; then
+		usage
+	fi
+}
+
+function get_config() {
+	# Find configuration file
+	if [ "$CONFIG" ]; then
+		if [ -r "$CONFIG" ]; then
+			msg "Using config '$CONFIG'."
+			source "$CONFIG"
+		else
+			echo "Couldn't read config '$CONFIG'. Aborting." >&2
+			exit
+		fi
+	elif [ -r ./backup.conf ]; then 
+		msg "Using config './backup.conf'."
+		source "./backup.conf"
+	elif [ -r /etc/backup.conf ]; then 
+		msg "Using config '/etc/backup.conf'."
+		source "/etc/backup.conf"
+	else 
+		echo "No usable configuration found. Aborting.." >&2
+		exit
 	fi
 
-	echo "	[-] Using backup list $BACKUP_LIST";
-	echo "	[-] Storing backups in $STORAGE_PATH";
-	echo "	[-] Backing up with niceness $NICENESS";
+	# Verify configuration
+	if [ ! "$SOURCE_LIST" -o ! "$DEST_DIR" ]; then
+		echo "Configuration '$CONFIG' isn't valid. Aborting.." >&2
+		exit
+	fi
+	if [ ! "$MODE" ]; then
+		MODE=600
+	fi
+	if [ ! "$NICENESS" ]; then
+		NICENESS=19
+	fi
+	if [ "$PRE_EACH" ]; then
+		if [ ! -x "$PRE_EACH" ]; then
+			echo "Couldn't run PRE_EACH script '$PRE_EACH'. Aborting..." >&2
+			exit
+		fi
+	fi
+	if [ "$POST_EACH" ]; then
+		if [ ! -x "$POST_EACH" ]; then
+			echo "Couldn't run POST_EACH script '$POST_EACH'. Aborting..." >&2
+			exit
+		fi
+	fi
+
+	# Sanitize configuration options
+	DEST_DIR="/`echo $DEST_DIR | sed -e 's/^\///;s/\/$//'`/"
+
+	export SOURCE_LIST
+	export DEST_DIR
+	export NICENESS
+	export MODE
+	export PRE
+	export POST
+	export PRE_EACH
+	export POST_EACH
+}
+
+function init_vars() {
+	export VERSION=0.5
+	export TEMPFILE=`tempfile`
+	export ERROR=0
+
+}
+
+init_vars
+handle_cmdline $*
+get_config
+
+#
+# Run the Pre script, if any
+#
+if [ "$PRE" ]; then
+	msg "Running PRE script '$PRE'";
+	$PRE
+fi
 
 #
 # Check some mandatory stuff which backup needs to run
 #
-	echo "[-] Checking state"
-	
-	if [ ! -e $BACKUP_LIST ]; then echo "	[!] $BACKUP_LIST does not exist"; exit; fi
-	if [ ! -r $BACKUP_LIST ]; then echo "	[!] $BACKUP_LIST: Access denied"; exit; fi
-	if [ ! -e $STORAGE_PATH ]; then 
-		echo "	[-] Backup storage dir $STORAGE_PATH does not exist."; 
-		echo "	[-] Attempting to create storage dir...";
+msg "Preparing for backup."
 
-		mkdir $STORAGE_PATH 2> /dev/null;
-		if [ ! -e $STORAGE_PATH ]; then echo "	[!] Could not create storage dir."; exit; fi
-		echo "	[-] Backup dir $STORAGE_PATH created successfull.";
-		echo "	[-] Setting permissions on backup directory to 700."
-		chmod 700 $STORAGE_PATH
+if [ ! -e $DEST_DIR ]; then 
+	msg "Backup storage dir $DEST_DIR does not exist. Attempting to create."; 
+
+	mkdir $DEST_DIR 2> /dev/null;
+	if [ ! -e $DEST_DIR ]; then 
+		echo "Couldn't create backup storage directory '$DEST_DIR'. Aborting..." >&2
 	fi
-	if [ ! -w $STORAGE_PATH ]; then echo "	[!] Backup Storage dir $STORAGE_PATH: Access denied"; exit; fi
+	chmod 700 $DEST_DIR
+fi
+if [ ! -w $DEST_DIR ]; then 
+	echo "Couldn't get write access to backup storage directory '$DEST_DIR'. Aborting..." >&2
+	exit
+fi
 
 #
 # Start the backup procedure
 #
-	echo "[-] Starting backup process";
-	for i in `cat $BACKUP_LIST | grep -v "#" | grep -vx ""`
-	do
-		# remove pending and trailing backslashes
-#		#i=`echo $i | sed -e 's/^\///'`
-#		#i=`echo $i | sed -e 's/\/$//'`
-		i=`echo $i | sed -e 's/^\///;s/\/$//'`
-		#if echo $i | grep -x -q "/.*"; then i=$(echo -n $i | tail -c $(expr $(echo $i | wc -c) - 2);); fi
-		#if echo $i | grep -x -q ".*/"; then	i=$(echo -n $i | head -c $(expr $(echo $i | wc -c) - 2);); fi
+msg "Starting the backup process"
+for SOURCE_DIR in `cat $SOURCE_LIST | grep -v "#" | grep -vx ""`
+do
+	# remove pending and trailing backslashes
+	SOURCE_DIR="`echo $SOURCE_DIR | sed -e 's/^\///;s/\/$//'`"
 
-		echo "	[.] /$i -> $STORAGE_PATH/`echo $i | tr \/ \.`.tar.bz2"
-		nice -n $NICENESS tar -pPcjf $STORAGE_PATH/`echo $i | tr \/ \.`.tar.bz2 /$i 2> $TEMPFILE
-		if [ -s $TEMPFILE ]; then echo "	[!] Errors occured while creating backup."; ERROR=1; fi
-	done
+	export DEST_FILE="`echo $SOURCE_DIR | sed -e 's/^\///;s/\/$//' | tr \/ \.`.tar.bz2"
+	export SOURCE_DIR="/$SOURCE_DIR/"
+
+	# Run the Pre script, if any
+	if [ "$PRE_EACH" ]; then
+		$PRE_EACH
+	fi
+
+	msg "Backing up: $SOURCE_DIR -> ${DEST_DIR}${DEST_FILE}"
+	nice -n $NICENESS tar -pPcjf ${DEST_DIR}${DEST_FILE} $SOURCE_DIR
+
+	# Run the post script, if any
+	if [ "$POST_EACH" ]; then
+		$POST_EACH
+	fi
+done
 
 #
 # Set the rights
 #
+msg "Setting permissions $MODE on backups"
+chmod $MODE $DEST_DIR/*;
 
-	echo "[-] Setting permissions to $MODE";
-	chmod $MODE $STORAGE_PATH/*;
-	
 #
-# Check for errors
+# Run the post script, if any
 #
-	if [ $ERROR = 1 ]
-	then 
-		echo "[!] Errors occured during the backup process."
-		echo "    Please check $TEMPFILE to see what went wrong."
-	else
-		echo "[-] Cleaning up."
-		rm $TEMPFILE
-	fi
+if [ "$POST" ]; then
+	msg "Running POST script '$POST'";
+	$POST
+fi
 
 #
 # Done...
 #
-	echo "[-] Done..."
-	exit $ERROR
+msg "Done."

@@ -1,6 +1,12 @@
 Backup: ChangeLog
 ------------------------------------------------------------------------------
 
+[27 Dec 2005] <%%EMAIL>
+	* Rewrite
+	* Much stuff moved to functions
+	* Pre, post, pre_each and post_each script support added.
+	* Release version 0.5
+
 [19 Dec 2001] <%%EMAIL>
     * Use of the I parameter for tar was changed to J (bzip2 option)
     * Changed email address in documentation
