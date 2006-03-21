@@ -1,6 +1,12 @@
 Backup: ChangeLog
 ------------------------------------------------------------------------------
 
+[21 Mrt 2006] <%%EMAIL>
+
+    * Backups of individual files are no longer supported.
+    * Custom scripts can be specified which can place the data to backup in
+      a provided directory.
+
 [27 Dec 2005] <%%EMAIL>
 	* Rewrite
 	* Much stuff moved to functions

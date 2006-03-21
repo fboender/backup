@@ -1,4 +1,4 @@
-backup v0.5
+backup v0.6
 
 Copyright (c) 2000, Ferry Boender <fboender at electricmonk .nl>
 Licensed under the General Public License (GPL), see COPYING file 
@@ -21,10 +21,12 @@ Contents of this document
 1. What is backup?
 -------------------------------------------------------------------------------
 
-	Backup is a shell script which tries to simplify/speed up the process of
-	making backups. The paths that need to be backed up are read from a file
-	containing the full pathnames to the paths and/or files that need to be
-	backed up. A tar.bz2 archive is created for each individual directory/file.
+    Backup is a shell script which tries to simplify/speed up the process of
+    making backups. The paths that need to be backed up are read from a file
+    containing the full pathnames to the paths that need to be backed up.
+    Optionally, a script can be listed which can perform an arbitrary task and
+    write its output to a designated directory which will be backed up. A
+    tar.bz2 archive is created for each directory.
   
 	Configuration is provided through a local or global configuration file. 
     
@@ -78,9 +80,9 @@ Contents of this document
 	2.2. Backup.list
 	-----------------------------------------------------------------------
 	
-	The backup.list file contains a number of paths which should be backed
-	up. A new tar.bzip2 archive will be created for each line in the file.
-	You may specify either a path or a filename.
+    The backup.list file contains a number of paths which should be backed up.
+    A new tar.bzip2 archive will be created for each line in the file. You may
+    specify either a path to a directory or to an executable script. 
 	
 	Some examples:
 	
@@ -89,12 +91,16 @@ Contents of this document
 	
 	/etc/
 	
-	To backup the file /home/john/myimportdata.txt to an archive named
-	myimportantdata.txt.tar.bzip2 use the following line:
+    To run a script which will perform an arbitrary task and then backup the
+    results, enter the following line:
+
+	/usr/local/bin/mysql_dump.sh
+
+    The script will be provided with a directory as its first parameter which
+    it should use to write it's output to. The directory will then be backed up
+    as if it had been specified as a normal directory to backup.
 	
-	/home/john/myimportantdata.txt
-	
-	
+
 	2.3. Automation.
 	-----------------------------------------------------------------------
 	

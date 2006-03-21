@@ -1,15 +1,18 @@
 #
-#  Backup list for backup v0.5
+#  Backup list for backup v0.6
 #
-#  This file contains a list of files/directories which will be backed up by
-#  backup each time it is run.
+#  This file contains a list of directories which will be backed up by
+#  backup each time it is run. If you specify a path to a script it will 
+#  be run and it's output (if it's placed in the correct directory) will
+#  be backed up.
 #
 #  Some examples:
 #  /usr/local/bin/
 #  /usr/local/sbin/
 #  /etc/
-#  /home/boender/mbox
+#  /usr/local/bin/mysql_dump.sh
 
+# Normal directories
 /etc/
 /usr/local/
 /home/
@@ -17,3 +20,6 @@
 /var/mail/
 /var/lib/cvs/
 /var/lib/mysql/
+
+# Scripts
+/usr/local/bin/mysql_backup.sh

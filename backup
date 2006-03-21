@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  backup v0.5
+#  backup v0.6
 #
 #  Backup allows the automation of a backup process through the use of a
 #  file which contains the paths to backup. You can use this program from 
@@ -123,7 +123,7 @@ function get_config() {
 }
 
 function init_vars() {
-	export VERSION=0.5
+	export VERSION=0.6
 	export TEMPFILE=`tempfile`
 	export ERROR=0
 
@@ -164,26 +164,47 @@ fi
 # Start the backup procedure
 #
 msg "Starting the backup process"
-for SOURCE_DIR in `cat $SOURCE_LIST | grep -v "#" | grep -vx ""`
+for SOURCE in `cat $SOURCE_LIST | grep -v "#" | grep -vx ""`
 do
-	# remove pending and trailing backslashes
-	SOURCE_DIR="`echo $SOURCE_DIR | sed -e 's/^\///;s/\/$//'`"
+    # Determine the type of backup source.
+    if [ -d "$SOURCE" ]; then
+        TYPE='D'
+    elif [ -e "$SOURCE" ]; then
+        TYPE='S'
+    fi
 
-	export DEST_FILE="`echo $SOURCE_DIR | sed -e 's/^\///;s/\/$//' | tr \/ \.`.tar.bz2"
-	export SOURCE_DIR="/$SOURCE_DIR/"
+    if [ "$TYPE" == 'D' ]; then
+        # remove pending and trailing backslashes
+        SOURCE="`echo $SOURCE | sed -e 's/^\///;s/\/$//'`"
+        export DEST_FILE="`echo $SOURCE | sed -e 's/^\///;s/\/$//' | tr \/ \.`.tar.bz2"
+        export SOURCE="/$SOURCE/"
+    elif [ "$TYPE" == 'S' ]; then
+        TEMPDIR=`mktemp -d`
+        $SOURCE $TEMPDIR
+        export DEST_FILE="`echo $SOURCE | sed -e 's/^\///;s/\/$//' | tr \/ \.`.tar.bz2"
+        echo $DEST_FILE
+        export SOURCE="$TEMPDIR/"
+    fi
 
 	# Run the Pre script, if any
 	if [ "$PRE_EACH" ]; then
 		$PRE_EACH
 	fi
 
-	msg "Backing up: $SOURCE_DIR -> ${DEST_DIR}${DEST_FILE}"
-	nice -n $NICENESS tar -pPcjf ${DEST_DIR}${DEST_FILE} $SOURCE_DIR
+	msg "Backing up: $SOURCE -> ${DEST_DIR}${DEST_FILE}"
+	nice -n $NICENESS tar -pPcjf ${DEST_DIR}${DEST_FILE} $SOURCE
 
 	# Run the post script, if any
 	if [ "$POST_EACH" ]; then
 		$POST_EACH
 	fi
+
+    if [ "$TYPE" == 'S' ]; then
+        # Remove the temporary directory for the output of the script
+        rm -rf $TEMPDIR
+        echo "hoi"
+    fi
+
 done
 
 #
