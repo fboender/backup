@@ -61,6 +61,7 @@ function handle_cmdline() {
 
 	if [ "$FLAG_HELP" ]; then
 		usage
+		exit
 	fi
 }
 
@@ -152,6 +153,7 @@ if [ ! -e $DEST_DIR ]; then
 	mkdir $DEST_DIR 2> /dev/null;
 	if [ ! -e $DEST_DIR ]; then 
 		echo "Couldn't create backup storage directory '$DEST_DIR'. Aborting..." >&2
+        exit
 	fi
 	chmod 700 $DEST_DIR
 fi
@@ -167,10 +169,12 @@ msg "Starting the backup process"
 for SOURCE in `cat $SOURCE_LIST | grep -v "#" | grep -vx ""`
 do
     # Determine the type of backup source.
-    if [ -d "$SOURCE" ]; then
-        TYPE='D'
-    elif [ -e "$SOURCE" ]; then
+    if [ ! -d "$SOURCE" -a -x "$SOURCE" ]; then
+        msg "$SOURCE: Type is script."
         TYPE='S'
+    elif [ -d "$SOURCE" -o -f "$SOURCE" ]; then
+        msg "$SOURCE: Type is dir or file."
+        TYPE='D'
     fi
 
     if [ "$TYPE" == 'D' ]; then

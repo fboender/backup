@@ -1,33 +1,32 @@
 Backup: ChangeLog
 ------------------------------------------------------------------------------
 
-[21 Mrt 2006] <%%EMAIL>
+[25 Mrt 2006] <f dot boender at electricmonk dot nl>
 
-    * Backups of individual files are no longer supported.
     * Custom scripts can be specified which can place the data to backup in
       a provided directory.
 
-[27 Dec 2005] <%%EMAIL>
+[27 Dec 2005] <f dot boender at electricmonk dot nl>
 	* Rewrite
 	* Much stuff moved to functions
 	* Pre, post, pre_each and post_each script support added.
 	* Release version 0.5
 
-[19 Dec 2001] <%%EMAIL>
+[19 Dec 2001] <f dot boender at electricmonk dot nl>
     * Use of the I parameter for tar was changed to J (bzip2 option)
     * Changed email address in documentation
     * Release version 0.4
 
-[27 Feb 2001] <%%EMAIL>
+[27 Feb 2001] <f dot boender at electricmonk dot nl>
     * Release version 0.3
     * Added support for setting permissions after backup
     
-[04 Dec 2000] <%%EMAIL>
+[04 Dec 2000] <f dot boender at electricmonk dot nl>
 
     * Release version 0.2 (gaat hard he)
     * Added failure if config file not found.
 
-[08 Sep 2000] <%%EMAIL>
+[08 Sep 2000] <f dot boender at electricmonk dot nl>
 
     * Release version 0.1
     * Updated documentation
