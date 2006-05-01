@@ -186,7 +186,6 @@ do
         TEMPDIR=`mktemp -d`
         $SOURCE $TEMPDIR
         export DEST_FILE="`echo $SOURCE | sed -e 's/^\///;s/\/$//' | tr \/ \.`.tar.bz2"
-        echo $DEST_FILE
         export SOURCE="$TEMPDIR/"
     fi
 
