@@ -1,16 +1,21 @@
 Backup: ChangeLog
 ------------------------------------------------------------------------------
 
+[20 May 2006] <f dot boender at electricmonk dot nl>
+
+    * Ownership can now be specified for newly created archives.
+    * Release version 0.7
+
 [25 Mrt 2006] <f dot boender at electricmonk dot nl>
 
     * Custom scripts can be specified which can place the data to backup in
       a provided directory.
 
 [27 Dec 2005] <f dot boender at electricmonk dot nl>
-	* Rewrite
-	* Much stuff moved to functions
-	* Pre, post, pre_each and post_each script support added.
-	* Release version 0.5
+    * Rewrite
+    * Much stuff moved to functions
+    * Pre, post, pre_each and post_each script support added.
+    * Release version 0.5
 
 [19 Dec 2001] <f dot boender at electricmonk dot nl>
     * Use of the I parameter for tar was changed to J (bzip2 option)

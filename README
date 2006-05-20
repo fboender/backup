@@ -1,4 +1,4 @@
-backup v0.6
+backup v0.7
 
 Copyright (c) 2000-2006, Ferry Boender <fboender at electricmonk .nl>
 Licensed under the General Public License (GPL), see COPYING file 
@@ -73,6 +73,8 @@ Contents of this document
     MODE            Which permissions to set on the newly created backup
                     archives. It should be specified as octal numbers,
                     like with chmod. Ex: 600 (only readable for owner)
+    OWNERSHIP       Which ownership to set on the newly created backup
+                    archives. Format is USER:GROUP; I.e: "backup:root".
     PRE             Script to run prior to starting the backup process.
                     The storage path may not exist at this point.
     POST            Script to run after finishing the backup process.
