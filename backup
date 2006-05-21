@@ -210,7 +210,6 @@ do
     if [ "$TYPE" == 'S' ]; then
         # Remove the temporary directory for the output of the script
         rm -rf $TEMPDIR
-        echo "hoi"
     fi
 
 done
