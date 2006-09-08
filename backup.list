@@ -13,13 +13,14 @@
 #  /usr/local/bin/mysql_dump.sh
 
 # Normal directories
-/etc/
-/usr/local/
-/home/
-/var/www/
-/var/mail/
-/var/lib/cvs/
-/var/lib/mysql/
+D:/etc
+D:/var/mail
+D:/usr/local/bin
+D:/usr/local/sbin
 
-# Scripts
-/usr/local/bin/mysql_backup.sh
+# Include script output to backup particular home directories
+I:/usr/local/bin/backup/homedirs.sh
+
+# Custom script will put backups of mysql databases into the backup dir.
+C:/usr/local/bin/backup/mysql.sh
+

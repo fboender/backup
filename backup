@@ -8,7 +8,7 @@
 #  To run this script through a cronjob, and be mailed automatically when
 #  a backup is made, you can add the following line to your /etc/crontab:
 #
-#  00 2    1 * *   root    /usr/local/sbin/backup
+#  00 2	1 * *   root	/usr/local/sbin/backup
 #
 #  to run a backup every first of the month at 02:00 and mail the result 
 #  to the root user (if your crontab is set up correctly anyways)
@@ -28,34 +28,78 @@
 #  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
 
+#
+# usage() : Show usage information (--help)
+#
 function usage() {
 	echo "Backup v$VERSION"
 	echo "Usage: $0 -v -c"
 	echo
+	echo "-c, --config CONFIG   Configuration file to use."
 	echo "-v, --verbose         Show lots of output"
-    echo "-c, --config CONFIG   Configuration file to use."
+	echo "-d, --debug           Show debug output"
 }
 
+#
+# msg(message) : Show message on STDOUT if FLAG_VERBOSE is set (-v)
+#
 function msg() {
 	if [ "$FLAG_VERBOSE" ]; then
-		echo $*
+		echo -e $*
 	fi
 }
 
-function handle_cmdline() {
-	TEMP=`getopt -o vc:h --long verbose,config:,help -n 'backup' -- "$@"`
+#
+# err(message) : Show error message on STDERR
+#
+function err() {
+	echo -e $* 1>&2
+}
 
-	if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+#
+# dbg(message) : Show debugging message on STDOUT if FLAG_DEBUG is set (-d)
+#
+function dbg() {
+	if [ "$FLAG_DEBUG" ]; then
+		echo -e $*
+	fi
+}
+
+#
+# handle_cmdline() : Read, process and set commandline options to flags, etc
+#
+function handle_cmdline() {
+	TEMP=`getopt -o vdc:h --long verbose,debug,config:,help -n 'backup' -- "$@"`
+
+	if [ $? != 0 ] ; then err "Terminating..."; exit 1 ; fi
 
 	eval set -- "$TEMP"
 
 	while true ; do
 		case "$1" in
-			-c|--config)   CONFIG=$2;      shift 2 ;;
-			-v|--verbose)  FLAG_VERBOSE=1; shift 1 ;;
-			-h|--help)     FLAG_HELP=1;    shift 1 ;;
-			--)                            shift 1; break ;;
-			*)             echo "Internal error!" ; exit 1 ;;
+			-c|--config)
+				CONFIG=$2;
+				shift 2
+				;;
+			-v|--verbose)
+				FLAG_VERBOSE=1; 
+				shift 1
+				;;
+			-d|--debug)
+				FLAG_DEBUG=1;
+				shift 1
+				;;
+			-h|--help)
+				FLAG_HELP=1;
+				shift 1
+				;;
+			--)
+				shift 1;
+				break ;;
+			*)
+				err "Internal error!";
+				exit 1
+				;;
 		esac
 	done
 
@@ -65,50 +109,59 @@ function handle_cmdline() {
 	fi
 }
 
+#
+# get_config(CONFIG) : Find a configuration file. Ff CONFIG is given, it will
+#                      be tried first. Otherwise a config file is searched
+#                      for in various locations. If one is found it is parsed
+#                      and the various settings in the file are set as global
+#                      variables.
+#
 function get_config() {
+	CONFIG=$1
+
 	# Find configuration file
 	if [ "$CONFIG" ]; then
 		if [ -r "$CONFIG" ]; then
-			msg "Using config '$CONFIG'."
-			source "$CONFIG"
+			FINAL_CONFIG=$CONFIG
 		else
-			echo "Couldn't read config '$CONFIG'. Aborting." >&2
+			err "Couldn't read config '$CONFIG'. Aborting."
 			exit
 		fi
 	elif [ -r ./backup.conf ]; then 
-		msg "Using config './backup.conf'."
-		source "./backup.conf"
+		FINAL_CONFIG="./backup.conf"
 	elif [ -r /etc/backup.conf ]; then 
-		msg "Using config '/etc/backup.conf'."
-		source "/etc/backup.conf"
+		FINAL_CONFIG="/etc/backup.conf"
 	else 
-		echo "No usable configuration found. Aborting.." >&2
+		err "No usable configuration found. Aborting.."
 		exit
 	fi
 
+	msg "Using config '$FINAL_CONFIG'."
+	source "$FINAL_CONFIG"
+
 	# Verify configuration
 	if [ ! "$SOURCE_LIST" -o ! "$DEST_DIR" ]; then
-		echo "Configuration '$CONFIG' isn't valid. Aborting.." >&2
+		err "Configuration '$CONFIG' isn't valid. Aborting.."
 		exit
 	fi
 	if [ ! "$MODE" ]; then
 		MODE=600
 	fi
-    if [ ! "$OWNERSHIP" ]; then
-        OWNERSHIP="`id -un`:`id -gn`"
-    fi
+	if [ ! "$OWNERSHIP" ]; then
+		OWNERSHIP="`id -un`:`id -gn`"
+	fi
 	if [ ! "$NICENESS" ]; then
 		NICENESS=19
 	fi
 	if [ "$PRE_EACH" ]; then
 		if [ ! -x "$PRE_EACH" ]; then
-			echo "Couldn't run PRE_EACH script '$PRE_EACH'. Aborting..." >&2
+			err "Couldn't run PRE_EACH script '$PRE_EACH'. Aborting..."
 			exit
 		fi
 	fi
 	if [ "$POST_EACH" ]; then
 		if [ ! -x "$POST_EACH" ]; then
-			echo "Couldn't run POST_EACH script '$POST_EACH'. Aborting..." >&2
+			err "Couldn't run POST_EACH script '$POST_EACH'. Aborting..."
 			exit
 		fi
 	fi
@@ -120,18 +173,42 @@ function get_config() {
 	export DEST_DIR
 	export NICENESS
 	export MODE
-    export OWNERSHIP
+	export OWNERSHIP
 	export PRE
 	export POST
 	export PRE_EACH
 	export POST_EACH
 }
 
+#
+# init_vars() : Set some default variable values.
+#
 function init_vars() {
 	export VERSION=0.7
 	export TEMPFILE=`tempfile`
 	export ERROR=0
 
+}
+
+#
+# do_backup() : ...
+#
+function do_backup() {
+	SOURCE="$1"
+	DEST_FILE="$2"
+
+	# Run the Pre script, if any
+	if [ "$PRE_EACH" ]; then
+		$PRE_EACH
+	fi
+
+	msg "Backing up: $SOURCE -> ${DEST_FILE}"
+	nice -n $NICENESS tar -pPcjf ${DEST_FILE} $SOURCE
+
+	# Run the post script, if any
+	if [ "$POST_EACH" ]; then
+		$POST_EACH
+	fi
 }
 
 init_vars
@@ -149,68 +226,115 @@ fi
 #
 # Check some mandatory stuff which backup needs to run
 #
-msg "Preparing for backup."
+dbg "Preparing for backup."
 
 if [ ! -e $DEST_DIR ]; then 
-	msg "Backup storage dir $DEST_DIR does not exist. Attempting to create."; 
+	dbg "Backup storage dir $DEST_DIR does not exist. Attempting to create."; 
 
 	mkdir -p $DEST_DIR 2> /dev/null;
 	if [ ! -e $DEST_DIR ]; then 
-		echo "Couldn't create backup storage directory '$DEST_DIR'. Aborting..." >&2
-        exit
+		err "Couldn't create backup storage directory '$DEST_DIR'. Aborting..."
+		exit
 	fi
 	chmod 700 $DEST_DIR
-    chown $OWNERSHIP $DEST_DIR
+	chown $OWNERSHIP $DEST_DIR
 fi
 if [ ! -w $DEST_DIR ]; then 
-	echo "Couldn't get write access to backup storage directory '$DEST_DIR'. Aborting..." >&2
+	err "Couldn't get write access to backup storage directory '$DEST_DIR'. Aborting..."
 	exit
 fi
 
 #
-# Start the backup procedure
 #
-msg "Starting the backup process"
+dbg "Starting the preprocess of the backup list"
+FINAL_SOURCE_LIST=`tempfile`
 for SOURCE in `cat $SOURCE_LIST | grep -v "#" | grep -vx ""`
 do
-    # Determine the type of backup source.
-    if [ ! -d "$SOURCE" -a -x "$SOURCE" ]; then
-        msg "$SOURCE: Type is script."
-        TYPE='S'
-    elif [ -d "$SOURCE" -o -f "$SOURCE" ]; then
-        msg "$SOURCE: Type is dir or file."
-        TYPE='D'
-    fi
+	dbg "Preprocessing source : $SOURCE"
+	# Split the source (TYPE:LOCATION)
+	SOURCE_TYPE=`echo $SOURCE | sed "s/\(.\):.*/\1/g"`
+	SOURCE_LOC=`echo $SOURCE | sed "s/.:\(.*\)/\1/g"`
 
-    if [ "$TYPE" == 'D' ]; then
-        # remove pending and trailing backslashes
-        SOURCE="`echo $SOURCE | sed -e 's/^\///;s/\/$//'`"
-        export DEST_FILE="`echo $SOURCE | sed -e 's/^\///;s/\/$//' | tr \/ \.`.tar.bz2"
-        export SOURCE="/$SOURCE/"
-    elif [ "$TYPE" == 'S' ]; then
-        TEMPDIR=`mktemp -d`
-        $SOURCE $TEMPDIR
-        export DEST_FILE="`echo $SOURCE | sed -e 's/^\///;s/\/$//' | tr \/ \.`.tar.bz2"
-        export SOURCE="$TEMPDIR/"
-    fi
+	case "$SOURCE_TYPE" in
+		# Include directive
+		I|i)
+			# Include the output of a script
+			if [ -x "$SOURCE_LOC" ]; then
+				echo "`$SOURCE_LOC`" >> $FINAL_SOURCE_LIST
+			else
+				err "$SOURCE_LOC is not a valid executable. Skipping."
+			fi
+			;;
 
-	# Run the Pre script, if any
-	if [ "$PRE_EACH" ]; then
-		$PRE_EACH
-	fi
+		# Any other directive is taken as-is.
+		*)
+			echo $SOURCE >> $FINAL_SOURCE_LIST
+			;;
+	esac
+done
+dbg "Final sources list: \n--\n`cat $FINAL_SOURCE_LIST`\n--"
 
-	msg "Backing up: $SOURCE -> ${DEST_DIR}${DEST_FILE}"
-	nice -n $NICENESS tar -pPcjf ${DEST_DIR}${DEST_FILE} $SOURCE
+#
+# Start the backup procedure. This walks through the list of final directives
+# and determines how they should be backed up. In the case of a directory, the
+# directory is made into a tar archive.  Single files also are made into a tar
+# archive. Scripts are run and the output the place in a directory is made into
+# a tar archive.
+#
+dbg "Starting the backup process"
+for SOURCE in `cat $FINAL_SOURCE_LIST | grep -v "#" | grep -vx ""`
+do
+	dbg "Processing source : $SOURCE"
+	# Split the source (TYPE:LOCATION)
+	SOURCE_TYPE="`echo $SOURCE | sed \"s/\(.\):.*/\1/g\"`"
+	SOURCE_LOC="`echo $SOURCE | sed \"s/.:\(.*\)/\1/g\"`"
 
-	# Run the post script, if any
-	if [ "$POST_EACH" ]; then
-		$POST_EACH
-	fi
+	case "$SOURCE_TYPE" in
+		# Directory
+		D|d)
+			# remove pending and trailing backslashes
+			FINAL_SOURCE="/`echo $SOURCE_LOC | sed -e 's/^\///;s/\/$//'`/"
+			FINAL_DEST="$DEST_DIR`echo $SOURCE_LOC | sed -e 's/^\///;s/\/$//' | tr \/ \.`.tar.bz2"
+			dbg "Final source = '$FINAL_SOURCE'"
+			dbg "Final destination = '$FINAL_DEST'"
+			do_backup "$FINAL_SOURCE" "$FINAL_DEST"
+			;;
 
-    if [ "$TYPE" == 'S' ]; then
-        # Remove the temporary directory for the output of the script
-        rm -rf $TEMPDIR
-    fi
+		# Custom
+		C|c)
+			if [ ! -x "$SOURCE_LOC" ]; then
+				err "$SOURCE_LOC is not an executable script. Skipping."
+			fi
+			`$SOURCE_LOC $DEST_DIR`
+			;;
+
+		# Script
+		S|s)
+			if [ ! -x "$SOURCE_LOC" ]; then
+				err "$SOURCE_LOC is not an executable script. Skipping."
+			else
+				# Run script which will output its files in tempdir
+				TEMPDIR="`mktemp -d`"
+				NAME="`$SOURCE_LOC $TEMPDIR`"
+
+				# Backup tempdir as a single backup source
+				FINAL_SOURCE="$TEMPDIR/"
+				if [ "$NAME" == "" ]; then
+					FINAL_DEST="$DEST_DIR`echo $SOURCE_LOC | sed -e 's/^\///;s/\/$//' | tr \/ \.`.tar.bz2"
+				else
+					FINAL_DEST="`echo $NAME | sed -e 's/^\///;s/\/$//' | tr \/ \.`.tar.bz2"
+				fi
+				do_backup "$FINAL_SOURCE" "$FINAL_DEST"
+
+				rm -rf "$TEMPDIR"
+			fi
+
+			;;
+		# Unknown backup type
+		*)
+			err "Unknown type '$SOURCE_TYPE' in '$SOURCE'. Skipping."
+			;;
+	esac
 
 done
 
@@ -229,6 +353,11 @@ if [ "$POST" ]; then
 	msg "Running POST script '$POST'";
 	$POST
 fi
+
+#
+# Do some cleaning up
+#
+rm -f $FINAL_SOURCE_LIST
 
 #
 # Done...

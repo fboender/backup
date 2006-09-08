@@ -1,6 +1,13 @@
 Backup: ChangeLog
 ------------------------------------------------------------------------------
 
+[08 Sep 2006] <f dot boender at electricmonk dot nl>
+
+    * Default hostname included in backup name.
+    * Backup list now uses directives ([D]irectory, [S]cript, etc)
+    * Other files and script output can now be included from the backup.list
+    * Debug switch too backup script.
+
 [20 May 2006] <f dot boender at electricmonk dot nl>
 
     * Ownership can now be specified for newly created archives.
