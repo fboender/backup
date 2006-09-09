@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  backup v0.7
+#  backup v0.8
 #
 #  Backup allows the automation of a backup process through the use of a
 #  file which contains the paths to backup. You can use this program from 
@@ -87,6 +87,7 @@ function handle_cmdline() {
 				;;
 			-d|--debug)
 				FLAG_DEBUG=1;
+				dbg "Turning on debugging mode."
 				shift 1
 				;;
 			-h|--help)
@@ -119,8 +120,12 @@ function handle_cmdline() {
 function get_config() {
 	CONFIG=$1
 
+	dbg "Trying to find a suitable configuration file."
+	dbg "$1"
+
 	# Find configuration file
 	if [ "$CONFIG" ]; then
+		dbg "Trying config $CONFIG."
 		if [ -r "$CONFIG" ]; then
 			FINAL_CONFIG=$CONFIG
 		else
@@ -128,8 +133,10 @@ function get_config() {
 			exit
 		fi
 	elif [ -r ./backup.conf ]; then 
+		dbg "Trying ./backup.conf."
 		FINAL_CONFIG="./backup.conf"
 	elif [ -r /etc/backup.conf ]; then 
+		dbg "Trying /etc/backup.conf."
 		FINAL_CONFIG="/etc/backup.conf"
 	else 
 		err "No usable configuration found. Aborting.."
@@ -184,10 +191,7 @@ function get_config() {
 # init_vars() : Set some default variable values.
 #
 function init_vars() {
-	export VERSION=0.7
-	export TEMPFILE=`tempfile`
-	export ERROR=0
-
+	export VERSION=0.8
 }
 
 #
@@ -213,7 +217,7 @@ function do_backup() {
 
 init_vars
 handle_cmdline $*
-get_config
+get_config $CONFIG
 
 #
 # Run the Pre script, if any
@@ -342,9 +346,9 @@ done
 # Set the rights
 #
 msg "Setting permissions $MODE on backups"
-chmod $MODE $DEST_DIR/*;
+chmod $MODE "$DEST_DIR/*";
 msg "Setting ownership $OWNERSHIP on backups"
-chown $OWNERSHIP $DEST_DIR/*;
+chown $OWNERSHIP "$DEST_DIR/*";
 
 #
 # Run the post script, if any
