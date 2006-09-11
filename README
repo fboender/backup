@@ -34,8 +34,8 @@ Contents of this document
 2. Installation.
 -------------------------------------------------------------------------------
 
-    Installation is currently (v0.3) not automated, so you will have to 
-    install it by hand. Here are some quick steps for installation:
+    Installation is currently not automated, so you will have to install it by
+    hand. Here are some quick steps for installation:
   
     * Edit backup.conf
     * Edit backup.list
@@ -51,8 +51,8 @@ Contents of this document
     2.1. Backup.conf
     -----------------------------------------------------------------------
     
-    In the backup.conf file contains the configuration for backup. When 
-    backup is run, it first checks the current directory for the file. If 
+    The backup.conf file contains the configuration for Backup. When 
+    Backup is ran, it first checks the current directory for the file. If 
     it is found it will be parsed. If it isn't found, backup will look for 
     the file in the /etc/ directory, and parse it. If still no
     configuration file was found, then the script will abort. 
@@ -64,79 +64,103 @@ Contents of this document
     Configuration values are in the form of: CONFIGOPTION=value
     The configuration options (CONFIGOPTION) are case sensitive!
     
-    BACKUP_LIST     Full path and filename to the file which contains the 
-                    list of paths/files that need to be backed up.
+    SOURCE_LIST     Full path and filename to the file which contains the 
+                    backup directives.
 
-    STORAGE_PATH    Location where the backups should be stored.
+    DEST_DIR        Location where the backups should be stored.
+
     NICENESS        Priority with which the backup process should run. 
                     (-20 = high, 19 = low)
+
     MODE            Which permissions to set on the newly created backup
                     archives. It should be specified as octal numbers,
                     like with chmod. Ex: 600 (only readable for owner)
+
     OWNERSHIP       Which ownership to set on the newly created backup
                     archives. Format is USER:GROUP; I.e: "backup:root".
+
     PRE             Script to run prior to starting the backup process.
                     The storage path may not exist at this point.
+                    
     POST            Script to run after finishing the backup process.
+
     PRE_EACH        Script to run prior to each individual path backup.
+
     POST_EACH       Script to run after each individual path backup.
 
 
     2.2. Backup.list
     -----------------------------------------------------------------------
     
-    The backup.list file contains a number of paths which should be backed up.
-    A new tar.bzip2 archive will be created for each line in the file. You may
-    specify either a path to a directory, file or to an executable script. 
-    
-    Some examples:
-    
-    To recursively backup the whole /etc/ dir to a archive named 
-    etc.tar.bzip2, use the following line:
-    
-    /etc/
-    
-    To run a script which will perform an arbitrary task and then backup the
-    results, enter the following line:
+    The backup.list contains the various backup directives which specify 
+    everything that should be backed up. The syntax for a backup directive is:
 
-    /usr/local/bin/mysql_dump.sh
+    TYPE:LOCATION
 
-    The script will be provided with a directory as its first parameter which
-    it should use to write it's output to. The directory will then be backed up
-    as if it had been specified as a normal directory to backup. An example
-    script:
+    The TYPE can be one of the following:
 
-        ---8<---------------------------------------------------------
-        #!/bin/sh
+        D     Normal directory.
+              This will backup the given directory in a single archive.
+              LOCATION should point to a path.
 
-        DEST=$1
+        I     Include.
+              This will take the output of the given script and treat it as
+              normal backup directives. LOCATION should point to an exexutable
+              script. The script takes no parameters.
 
-        mysqldump -u root -p MYPW1234 -h localhost mydb > $1/mydb.sql
-        ---8<---------------------------------------------------------
+        C     Custom.
+              A custom script which will do all the backup work itself.
+              LOCATION should point to an executable script. The script should
+              take one parameter which will be the directory where the backups
+              are to be placed. No PRE_EACH and POST_EACH is run on the
+              generated backups.
+
+        S     Script.
+              A normal script which will put the files that need to be backed
+              up into a directory which will then be backed up to a single
+              archive. LOCATION should point to an executable script. The
+              script should take one parameter which will be the directory
+              where the files are to be placed.
+
+    Look in the contrib directory for Include, Custom and Script examples.
+
+    The LOCATION is the location to a file, directory or executable script
+    (depending on the type of the directive).
+
+    You'll find some examples in the backup.conf.
+
+    Each directive, except for the Custom directive, will result in a single
+    tar.bz2 file in the DEST_DIR directory. Custom scripts should place the
+    resulting archives it creates in the DEST_DIR directory itself.
     
 
     2.3. Automation.
     -----------------------------------------------------------------------
     
-    If you want backup to run automatically, say, every week you can create
-    the following entry in your /etc/crontab:
+    If you want backup to run automatically, say, every week you can create the
+    following entry in your /etc/crontab:
     
     00 3    * * 1   root    /usr/local/sbin/backup
     
-    This will generate some output each time it's finished backing up. 
-    Depending on your configuration, this output will automatically be
-    mailed to you. If you do not wish backup to generate this output, just
-    add a redirector to the crontab like this:
+    This will generate some output each time it's finished backing up.
+    Depending on your configuration, this output will automatically be mailed
+    to you. If you do not wish backup to generate this output, just add a
+    redirector to the crontab like this:
     
     00 3    * * 1   root    /usr/local/sbin/backup > /dev/null
     
-    Or redirect the output to some kind of backup log. Errors during the
-    backup will still be mailed to you (depending on your configuration)
+    Or redirect the output to some kind of backup log. Errors during the backup
+    will still be mailed to you (depending on your configuration)
 
-    If you cannot run backup as root, you can add the following line to 
-    your personal crontab:
+    If you cannot run backup as root, you can add the following line to your
+    personal crontab:
     
     00 3    * * 1   /home/john/bin/backup > /dev/null
+
+
+    Depending on your Operating System and your personal needs/rights, you may
+    be able to place a script in /etc/cron.daily or /etc/cron.weekly which will
+    run the backups.
     
     2.4. Pre and Post scripts
     -----------------------------------------------------------------------
@@ -171,7 +195,7 @@ Contents of this document
     backup is Copyright by Ferry Boender,
     licensed under the General Public License (GPL)
 
-    Copyright (C), 2000 by Ferry Boender <fboender at nihilist.nl>
+    Copyright (C), 2000-2006 by Ferry Boender <fboender at nihilist.nl>
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License

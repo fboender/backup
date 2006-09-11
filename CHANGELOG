@@ -6,7 +6,9 @@ Backup: ChangeLog
     * Default hostname included in backup name.
     * Backup list now uses directives ([D]irectory, [S]cript, etc)
     * Other files and script output can now be included from the backup.list
-    * Debug switch too backup script.
+    * Custom script can be ran which will to everything itself.
+    * Debug switch added to backup script.
+    * Release 0.8
 
 [20 May 2006] <f dot boender at electricmonk dot nl>
 
