@@ -78,7 +78,7 @@ function handle_cmdline() {
 	while true ; do
 		case "$1" in
 			-c|--config)
-				CONFIG=$2;
+				CONFIG="$2";
 				shift 2
 				;;
 			-v|--verbose)
@@ -111,6 +111,21 @@ function handle_cmdline() {
 }
 
 #
+# test_config(CONFIG): Test is a certain file is a correct configuration
+#                      file.
+#
+function test_config() {
+	CONFIG="$1"
+	
+	HAS_SOURCE_LIST=`grep "^.*SOURCE_LIST.*=" "$CONFIG"`
+	if [ -z "$HAS_SOURCE_LIST" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+#
 # get_config(CONFIG) : Find a configuration file. Ff CONFIG is given, it will
 #                      be tried first. Otherwise a config file is searched
 #                      for in various locations. If one is found it is parsed
@@ -118,7 +133,7 @@ function handle_cmdline() {
 #                      variables.
 #
 function get_config() {
-	CONFIG=$1
+	CONFIG="$1"
 
 	dbg "Trying to find a suitable configuration file."
 	dbg "$1"
@@ -127,7 +142,7 @@ function get_config() {
 	if [ "$CONFIG" ]; then
 		dbg "Trying config $CONFIG."
 		if [ -r "$CONFIG" ]; then
-			FINAL_CONFIG=$CONFIG
+			FINAL_CONFIG="$CONFIG"
 		else
 			err "Couldn't read config '$CONFIG'. Aborting."
 			exit
@@ -144,6 +159,10 @@ function get_config() {
 	fi
 
 	msg "Using config '$FINAL_CONFIG'."
+	if [ ! `test_config "$FINAL_CONFIG"` ]; then
+		err "Invalid configuration file. Aborting..."
+		exit
+	fi
 	source "$FINAL_CONFIG"
 
 	# Verify configuration

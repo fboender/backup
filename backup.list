@@ -32,9 +32,9 @@ D:/var/mail
 D:/usr/local/bin
 D:/usr/local/sbin
 
-# Include script output to backup particular home directories
-I:/usr/local/bin/backup/homedirs.sh
-
-# Custom script will put backups of mysql databases into the backup dir.
-C:/usr/local/bin/backup/mysql.sh
+## Include script output to backup particular home directories
+#I:/usr/local/bin/backup/homedirs.sh
+#
+## Custom script will put backups of mysql databases into the backup dir.
+#C:/usr/local/bin/backup/mysql.sh
 
