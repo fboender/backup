@@ -63,31 +63,10 @@ Contents of this document
 
     Configuration values are in the form of: CONFIGOPTION=value
     The configuration options (CONFIGOPTION) are case sensitive!
+
+	Check the backup.conf example file for a list of directives which are
+	accepted.
     
-    SOURCE_LIST     Full path and filename to the file which contains the 
-                    backup directives.
-
-    DEST_DIR        Location where the backups should be stored.
-
-    NICENESS        Priority with which the backup process should run. 
-                    (-20 = high, 19 = low)
-
-    MODE            Which permissions to set on the newly created backup
-                    archives. It should be specified as octal numbers,
-                    like with chmod. Ex: 600 (only readable for owner)
-
-    OWNERSHIP       Which ownership to set on the newly created backup
-                    archives. Format is USER:GROUP; I.e: "backup:root".
-
-    PRE             Script to run prior to starting the backup process.
-                    The storage path may not exist at this point.
-                    
-    POST            Script to run after finishing the backup process.
-
-    PRE_EACH        Script to run prior to each individual path backup.
-
-    POST_EACH       Script to run after each individual path backup.
-
 
     2.2. Backup.list
     -----------------------------------------------------------------------
@@ -122,7 +101,8 @@ Contents of this document
               script should take one parameter which will be the directory
               where the files are to be placed.
 
-    Look in the contrib directory for Include, Custom and Script examples.
+	Look in the contrib and examples directory for Include, Custom and Script
+	examples.
 
     The LOCATION is the location to a file, directory or executable script
     (depending on the type of the directive).
