@@ -119,9 +119,9 @@ function test_config() {
 	
 	HAS_SOURCE_LIST=`grep "^.*SOURCE_LIST.*=" "$CONFIG"`
 	if [ -z "$HAS_SOURCE_LIST" ]; then
-		return 0
-	else
 		return 1
+	else
+		return 0
 	fi
 }
 
@@ -159,14 +159,18 @@ function get_config() {
 	fi
 
 	msg "Using config '$FINAL_CONFIG'."
-	if [ ! `test_config "$FINAL_CONFIG"` ]; then
+
+	# Verify that it's a backup configuration 
+	test_config "$FINAL_CONFIG"
+	EXITCODE=$?
+	if [ "$EXITCODE" -ne "0" ]; then
 		err "Invalid configuration file. Aborting..."
 		exit
 	fi
 	source "$FINAL_CONFIG"
 
 	# Verify configuration
-	if [ ! "$SOURCE_LIST" -o ! "$DEST_DIR" ]; then
+	if [ ! "$SOURCE_LIST" -o ! "$BACKUP_DIR" -o ! "$DIR_FORMAT" ]; then
 		err "Configuration '$CONFIG' isn't valid. Aborting.."
 		exit
 	fi
@@ -191,9 +195,15 @@ function get_config() {
 			exit
 		fi
 	fi
+	if [ ! -r "$SOURCE_LIST" ]; then
+		err "Can't find or read $SOURCE_LIST. Aborting..."
+		exit
+	fi
 
 	# Sanitize configuration options
-	DEST_DIR="/`echo $DEST_DIR | sed -e 's/^\///;s/\/$//'`/"
+	DEST_DIR="/`echo $BACKUP_DIR | sed -e 's/^\///;s/\/$//'`/"
+	DEST_DIR="$DEST_DIR`echo $DIR_FORMAT | sed -e 's/^\///;s/\/$//'`/"
+	msg "Destination dir is '$DEST_DIR'"
 
 	export SOURCE_LIST
 	export DEST_DIR
@@ -231,6 +241,11 @@ function do_backup() {
 	# Run the post script, if any
 	if [ "$POST_EACH" ]; then
 		$POST_EACH
+		EXITCODE=$?
+		if [ "$EXITCODE" -ne "0" ]; then
+			err "POST script '$POST' failed. Aborting..."
+			exit
+		fi
 	fi
 }
 
@@ -254,11 +269,12 @@ dbg "Preparing for backup."
 if [ ! -e $DEST_DIR ]; then 
 	dbg "Backup storage dir $DEST_DIR does not exist. Attempting to create."; 
 
-	mkdir -p $DEST_DIR 2> /dev/null;
-	if [ ! -e $DEST_DIR ]; then 
+	mkdir -p "$DEST_DIR" 2> /dev/null;
+	if [ ! -e "$DEST_DIR" ]; then 
 		err "Couldn't create backup storage directory '$DEST_DIR'. Aborting..."
 		exit
 	fi
+	dbg "Setting permissions/ownership on backup storage dir $DEST_DIR"
 	chmod 700 $DEST_DIR
 	chown $OWNERSHIP $DEST_DIR
 fi
@@ -365,9 +381,9 @@ done
 # Set the rights
 #
 msg "Setting permissions $MODE on backups"
-chmod $MODE "$DEST_DIR/*";
+chmod $MODE "$DEST_DIR"*;
 msg "Setting ownership $OWNERSHIP on backups"
-chown $OWNERSHIP "$DEST_DIR/*";
+chown $OWNERSHIP "$DEST_DIR"*;
 
 #
 # Run the post script, if any
@@ -375,6 +391,11 @@ chown $OWNERSHIP "$DEST_DIR/*";
 if [ "$POST" ]; then
 	msg "Running POST script '$POST'";
 	$POST
+	EXITCODE=$?
+	if [ "$EXITCODE" -ne "0" ]; then
+		err "POST script '$POST' failed. Aborting..."
+		exit
+	fi
 fi
 
 #
