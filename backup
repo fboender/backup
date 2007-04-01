@@ -45,7 +45,7 @@ function usage() {
 #
 function msg() {
 	if [ "$FLAG_VERBOSE" ]; then
-		echo -e $*
+		echo -e "$*"
 	fi
 }
 
@@ -53,7 +53,7 @@ function msg() {
 # err(message) : Show error message on STDERR
 #
 function err() {
-	echo -e $* 1>&2
+	echo -e "$*" 1>&2
 }
 
 #
@@ -61,7 +61,7 @@ function err() {
 #
 function dbg() {
 	if [ "$FLAG_DEBUG" ]; then
-		echo -e $*
+		echo -e "$*"
 	fi
 }
 
@@ -170,8 +170,20 @@ function get_config() {
 	source "$FINAL_CONFIG"
 
 	# Verify configuration
-	if [ ! "$SOURCE_LIST" -o ! "$BACKUP_DIR" -o ! "$DIR_FORMAT" ]; then
-		err "Configuration '$CONFIG' isn't valid. Aborting.."
+	if [ ! "$SOURCE_LIST" ]; then
+		err "Configuration '$CONFIG' missing a SOURCE_LIST. Aborting..."
+		exit
+	fi
+	if [ ! "$BACKUP_DIR" ]; then
+		err "Configuration '$CONFIG' missing a BACKUP_DIR. Aborting..."
+		exit
+	fi
+	if [ ! "$DIR_FORMAT" ]; then
+		err "Configuration '$CONFIG' missing a DIR_FORMAT. Aborting..."
+		exit
+	fi
+	if [ ! "$STATE_DIR" ]; then
+		err "Configuration '$CONFIG' missing a STATE_DIR. Aborting..."
 		exit
 	fi
 	if [ ! "$MODE" ]; then
@@ -204,6 +216,8 @@ function get_config() {
 	DEST_DIR="/`echo $BACKUP_DIR | sed -e 's/^\///;s/\/$//'`/"
 	DEST_DIR="$DEST_DIR`echo $DIR_FORMAT | sed -e 's/^\///;s/\/$//'`/"
 	msg "Destination dir is '$DEST_DIR'"
+	STATE_DIR="/`echo $STATE_DIR | sed -e 's/^\///;s/\/$//'`/"
+	msg "State dir is '$STATE_DIR'"
 
 	export SOURCE_LIST
 	export DEST_DIR
@@ -231,14 +245,19 @@ function do_backup() {
 	DEST_FILE="$2"
 
 	# Run the Pre script, if any
+	set_state "preprocess:start:$SOURCE:$DEST_FILE"
 	if [ "$PRE_EACH" ]; then
 		$PRE_EACH
 	fi
+	set_state "preprocess:done:$SOURCE:$DEST_FILE"
 
+	set_state "backup:start:$SOURCE:$DEST_FILE"
 	msg "Backing up: $SOURCE -> ${DEST_FILE}"
 	nice -n $NICENESS tar -pPcjf ${DEST_FILE} $SOURCE
+	set_state "backup:done:$SOURCE:$DEST_FILE"
 
 	# Run the post script, if any
+	set_state "postprocess:$SOURCE:$DEST_FILE"
 	if [ "$POST_EACH" ]; then
 		$POST_EACH
 		EXITCODE=$?
@@ -247,6 +266,16 @@ function do_backup() {
 			exit
 		fi
 	fi
+}
+
+function set_state() {
+	if [ ! -d "${STATE_DIR}state" ]; then
+		echo "FOOBAR"
+	fi
+	STEP="$*"
+	dbg "Setting state:"
+	dbg "  STEP = $STEP"
+	echo "$STEP" >> "${STATE_DIR}state"
 }
 
 init_vars
