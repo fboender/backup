@@ -1,0 +1,52 @@
+#
+#  backup.conf
+#
+#  backup v0.8 - configuration file
+#
+#  This file contains some configuration values for use with backup backup will
+#  first look for this file in the current working directory, if it is not
+#  found there, it will check for a global configuration file at
+#  /etc/backup.conf. This behaviour can be overridden using the -c switch to
+#  supply your own backup.conf location.
+#
+#  The values withing this file are loaded using the eval command. Any lines
+#  containing a # or empty lines will not be parsed.
+#
+#  The following values are possible:
+#
+#    SOURCE_LIST  = Full path and filename of the file which contains the
+#                   files and paths that need to be backed up.
+#    BACKUP_DIR   = The directory which will hold all the backups.
+#    DIR_FORMAT   = The format of a single backup run directory.
+#    NICENESS     = Priority with which the backup process should run.
+#                   (-20 = high, 19 = low)
+#    MODE         = Permissions for newly created archives. Same octal
+#                   representation as chmod
+#    PRE          = Script to run prior to starting the backup process.
+#    POST         = Script to run after the backup process.
+#    PRE_EACH     = Script to run prior to each new path backup.
+#    POST_EACH    = Script to run after each path backup's completed.
+
+SOURCE_LIST=./backup.list.test
+BACKUP_DIR=/home/todsah/dev/personal/backup/test/usr_local_backup/
+DIR_FORMAT=`hostname`/backup-`hostname`-`date +"%Y-%m-%d"`
+LOG=./test/var_log/backup.log
+NICENESS=19
+MODE=600
+OWNERSHIP=todsah:todsah
+STATE_DIR=/home/todsah/dev/personal/backup/test/var_run
+GPG=1
+GPG_RECP=Ferry Boender <f.boender@electricmonk.nl>
+
+#SOURCE_LIST=./backup.list.test
+#BACKUP_DIR=./test/usr_local_backup/
+#DIR_FORMAT=`hostname`/backup-`hostname`-`date +"%Y-%m-%d"`
+#NICENESS=19
+#MODE=600
+#OWNERSHIP=todsah:todsah
+#STATE_DIR=./test/var_run
+
+#PRE=/usr/local/sbin/backup/pre.sh
+#POST=/usr/local/sbin/backup/post.sh
+#PRE_EACH=/usr/local/sbin/backup/pre_each.sh
+#POST_EACH=/usr/local/sbin/backup/post_each.sh

@@ -1,0 +1,40 @@
+#
+#  Backup list for backup v0.8
+#
+#  This file contains a list of backup directives. Each directive is in the form
+#  of: 
+#
+#  TYPE:LOCATION
+#
+#  The TYPE can be one of the following:
+#
+#    D     Normal directory.
+#          This will backup the given directory in a single archive.
+#
+#    I     Include.
+#          This will take the output of the given script and treat it as
+#          normal backup directives.
+#
+#    C     Custom.
+#          A custom script which will do all the backup work itself.
+#
+#    S     Script.
+#          A normal script which will put the files that need to be backed
+#          up into a directory which will then be backed up to a single
+#          archive.
+#
+#  The LOCATION is the location to a file, directory or executable script.
+#
+
+# Normal directories
+D:/etc
+#D:/var/mail
+#D:/usr/local/bin
+#D:/usr/local/sbin
+#
+## Include script output to backup particular home directories
+#I:/usr/local/bin/backup/homedirs.sh
+#
+## Custom script will put backups of mysql databases into the backup dir.
+#C:/usr/local/bin/backup/mysql.sh
+#
