@@ -66,6 +66,20 @@ function dbg() {
 }
 
 #
+# run_cmd(cmd) : Run a command and capture error output/log errors/check return
+# code, etc
+#
+function run_cmd() {
+	CMD="$@"
+	dbg "Running command '$CMD'"
+	$CMD
+	if [ $? -ne 0 ]; then
+		err "The command '$CMD' didn't return an exit code of 0. Aborting..."
+		exit
+	fi
+}
+
+#
 # handle_cmdline() : Read, process and set commandline options to flags, etc
 #
 function handle_cmdline() {
@@ -195,6 +209,12 @@ function get_config() {
 	if [ ! "$NICENESS" ]; then
 		NICENESS=19
 	fi
+	if [ ! "$PGP" ]; then
+		PGP=0
+	fi
+	if [ ! "$PGP_RECP" ]; then
+		PGP_RECP=
+	fi
 	if [ "$PRE_EACH" ]; then
 		if [ ! -x "$PRE_EACH" ]; then
 			err "Couldn't run PRE_EACH script '$PRE_EACH'. Aborting..."
@@ -213,10 +233,10 @@ function get_config() {
 	fi
 
 	# Sanitize configuration options
-	DEST_DIR="/`echo $BACKUP_DIR | sed -e 's/^\///;s/\/$//'`/"
-	DEST_DIR="$DEST_DIR`echo $DIR_FORMAT | sed -e 's/^\///;s/\/$//'`/"
+	DEST_DIR="`echo $BACKUP_DIR | sed -e 's/\/$//'`/"
+	DEST_DIR="$DEST_DIR`echo $DIR_FORMAT | sed -e 's/\/$//'`/"
 	msg "Destination dir is '$DEST_DIR'"
-	STATE_DIR="/`echo $STATE_DIR | sed -e 's/^\///;s/\/$//'`/"
+	STATE_DIR="`echo $STATE_DIR | sed -e 's/\/$//'`/"
 	msg "State dir is '$STATE_DIR'"
 
 	export SOURCE_LIST
@@ -224,6 +244,8 @@ function get_config() {
 	export NICENESS
 	export MODE
 	export OWNERSHIP
+	export PGP
+	export PGP_RECP
 	export PRE
 	export POST
 	export PRE_EACH
@@ -269,9 +291,11 @@ function do_backup() {
 }
 
 function set_state() {
-	if [ ! -d "${STATE_DIR}state" ]; then
-		echo "FOOBAR"
-	fi
+	# FIXME: This is supposed to do something.
+	#if [ ! -d "${STATE_DIR}state" ]; then
+	#	echo "FOOBAR"
+	#	exit
+	#fi
 	STEP="$*"
 	dbg "Setting state:"
 	dbg "  STEP = $STEP"
