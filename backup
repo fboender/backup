@@ -275,7 +275,7 @@ function do_backup() {
 
 	set_state "backup:start:$SOURCE:$DEST_FILE"
 	msg "Backing up: $SOURCE -> ${DEST_FILE}"
-	nice -n $NICENESS tar -pPcjf ${DEST_FILE} $SOURCE
+	nice -n $NICENESS tar --one-file-system -pPcjf ${DEST_FILE} $SOURCE
 	set_state "backup:done:$SOURCE:$DEST_FILE"
 
 	# Run the post script, if any
